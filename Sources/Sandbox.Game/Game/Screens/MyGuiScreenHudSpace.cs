@@ -30,6 +30,9 @@ using Color = VRageMath.Color;
 using MyGuiConstants = Sandbox.Graphics.GUI.MyGuiConstants;
 using OreDepositMarker = VRage.MyTuple<VRageMath.Vector3D, Sandbox.Game.Entities.Cube.MyEntityOreDeposit>;
 using Vector2 = VRageMath.Vector2;
+using Sandbox.ModAPI;
+using Sandbox.Engine.Networking;
+using System.IO;
 
 namespace Sandbox.Game.Gui
 {
@@ -255,6 +258,9 @@ namespace Sandbox.Game.Gui
 
                 if (MyHud.ObjectiveLine.Visible && MyFakes.ENABLE_OBJECTIVE_LINE)
                     DrawObjectiveLine(MyHud.ObjectiveLine);
+
+                if (MySession.Static.VehicleEditorMode == true)
+                    DrawVehicleInfo();
             }
             else
                 m_buildModeLabel.Visible = false;
@@ -373,6 +379,117 @@ namespace Sandbox.Game.Gui
         {
             m_toolbarControl.Visible = visible;
             m_hiddenToolbar = !visible;
+        }
+
+        private enum vehicleInfoEnum
+        {
+            tier,
+            cost,
+            weight,
+            thrust,
+            maxspeed,
+            takeoffDistance,
+        }
+
+        private MyHudNameValueData vehicleEditorData = new MyHudNameValueData(Enum.GetNames(typeof(vehicleInfoEnum)).Length); //Tier, cost, weight, thrust, max speed, acceleration, 
+
+        public static bool forceRecalculateVehicleData = true;
+        private float totalMass = 0f;
+        private float totalThrust = 0f;
+
+        public static void forceRecalculateVehicleData_event_added(MySlimBlock obj)
+        {
+            forceRecalculateVehicleData = true;
+        }
+
+        public static void forceRecalculateVehicleData_event_removed(MySlimBlock obj)
+        {
+            forceRecalculateVehicleData = true;
+        }
+
+        private static readonly Dictionary<Base6Directions.Direction, byte> SixDirectionDictionary = new Dictionary<Base6Directions.Direction, byte>
+        {
+            {Base6Directions.Direction.Forward,1},
+            {Base6Directions.Direction.Backward,2},
+            {Base6Directions.Direction.Up,3},
+            {Base6Directions.Direction.Down,4},
+            {Base6Directions.Direction.Left,5},
+            {Base6Directions.Direction.Right,6}
+
+        };
+
+        private byte ConvertOrientationToByte(MyBlockOrientation orientation)
+        {
+            //return orientation;
+            return (byte)(SixDirectionDictionary[orientation.Forward] * 4 + SixDirectionDictionary[orientation.Up]);
+        }
+
+        private bool saveVehicle()
+        {
+            if (MySession.Static.VehicleEditor_Vehicle == null)
+                return false;
+            foreach (MySlimBlock block in MySession.Static.VehicleEditor_Vehicle.CubeBlocks)
+            {
+               // if (block)
+                //MyBlockOrientation
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Ugly code, should fix not to be crap :)
+        /// </summary>
+        private void DrawVehicleInfo()
+        {
+            if (MySession.Static.VehicleEditor_Vehicle == null)
+                return;
+            //vehicleEditorData[(int)vehicleInfoEnum.tier].Name.Clear().AppendStringBuilder(MyTexts.Get(MySpaceTexts));
+            MyGuiDrawAlignEnum align = MyGuiDrawAlignEnum.HORISONTAL_LEFT_AND_VERTICAL_TOP;
+            Color color = Color.White;
+            var basePos = new Vector2(0.01f, 0.01f);
+            var bgPos = ConvertHudToNormalizedGuiPosition(ref basePos);
+            Vector2 namePos, valuePos, bgScale;
+            MyGuiPaddedTexture bg;
+
+            StringBuilder stringToDraw = new StringBuilder();
+            Vector2 stringSizeToDraw = new Vector2();
+            bg = MyGuiConstants.TEXTURE_HUD_BG_MEDIUM_DEFAULT;
+            bgScale = new Vector2(1.1f, 1f);
+            var bgWidth = bg.SizeGui.X * bgScale.X;
+            MyGuiManager.DrawSpriteBatch(bg.Texture, bgPos, new Vector2(bgWidth, bgWidth * 1.5f), Color.White, align);
+
+            namePos = bgPos + new Vector2(1f, -1f) * bg.PaddingSizeGui * bgScale;
+            valuePos = bgPos + (new Vector2(bgWidth, 0f) - bg.PaddingSizeGui);
+            bgPos += basePos;
+            Vector2 bgPosRightOffset = new Vector2(bgWidth * 0.9f, 0);
+            StringBuilder stringToDisplay = new StringBuilder("Tier");
+            //stringToDisplay
+            MyGuiManager.DrawString(MyFontEnum.Blue, new StringBuilder("Tier"), new Vector2(bgPos.X + 0.075f, bgPos.Y), m_textScale, null, MyGuiDrawAlignEnum.HORISONTAL_RIGHT_AND_VERTICAL_TOP);
+            bgPos.Y += MyGuiConstants.HUD_LINE_SPACING;
+            MyGuiManager.DrawString(MyFontEnum.Blue, new StringBuilder("Cost"), bgPos, m_textScale);
+            bgPos.Y += MyGuiConstants.HUD_LINE_SPACING;
+            MyGuiManager.DrawString(MyFontEnum.Blue, new StringBuilder("Weight"), bgPos, m_textScale);
+            if (forceRecalculateVehicleData)
+            {
+                totalMass = 0f;
+                foreach (MySlimBlock block in MySession.Static.VehicleEditor_Vehicle.GetBlocks())
+                {
+                    totalMass += block.GetMass();
+                }
+                forceRecalculateVehicleData = false;
+            }
+            stringToDraw.Clear().AppendInt32((int)totalMass).AppendLine(" kg");
+            stringSizeToDraw = MyGuiManager.MeasureString(MyFontEnum.White, stringToDraw, m_textScale);
+            stringSizeToDraw.Y = 0;
+            MyGuiManager.DrawString(MyFontEnum.White, stringToDraw , bgPos + bgPosRightOffset - stringSizeToDraw, m_textScale);
+            stringSizeToDraw = MyGuiManager.MeasureString(MyFontEnum.White, stringToDraw, m_textScale);
+            bgPos.Y += MyGuiConstants.HUD_LINE_SPACING;
+            MyGuiManager.DrawString(MyFontEnum.Blue, new StringBuilder("Max Speed"), bgPos, m_textScale);
+            bgPos.Y += MyGuiConstants.HUD_LINE_SPACING;
+            MyGuiManager.DrawString(MyFontEnum.Blue, new StringBuilder("Take-off"), bgPos, m_textScale);
+            bgPos.Y += MyGuiConstants.HUD_LINE_SPACING;
+
+            //MySession.Static.VehicleEditor_Vehicle.Physics.Mass
         }
 
         private void DrawGravityIndicator(MyHudGravityIndicator indicator, MyHudCharacterInfo characterInfo)

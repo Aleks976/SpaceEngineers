@@ -40,7 +40,7 @@ namespace Sandbox.Game.Screens.Helpers
         public int PageCount;
         public int ItemCount { get { return SlotCount * PageCount; } }
 
-        private MyToolbarItem[] m_items;
+        private MyToolbarSubItem[] m_items;
 
         private MyToolbarType m_toolbarType;
         public MyToolbarType ToolbarType
@@ -124,11 +124,27 @@ namespace Sandbox.Game.Screens.Helpers
             }
         }
 
+        public MyToolbarSubItem SelectedSubItem
+        {
+            get
+            {
+                if (!SelectedSlot.HasValue) return null;
+                return m_items[SelectedSlot.Value];
+            }
+        }
+
         public MyToolbarItem this[int i]
         {
             get
             {
-                return m_items[i];
+                if (m_items[i] != null)
+                {
+                    return m_items[i].CurrentItem;
+                }
+                else
+                {
+                    return null;
+                }
             }
         }
 
@@ -156,7 +172,7 @@ namespace Sandbox.Game.Screens.Helpers
 
             if (IsValidSlot(slot))
             {
-                return m_items[SlotToIndex(slot)];
+                return m_items[SlotToIndex(slot)].CurrentItem;
             }
             return null;
         }
@@ -165,7 +181,7 @@ namespace Sandbox.Game.Screens.Helpers
         {
             for (int i = 0; i < m_items.Length; ++i)
             {
-                if (m_items[i] == item)
+                if (m_items[i].CurrentItem == item)
                 {
                     return i;
                 }
@@ -211,7 +227,7 @@ namespace Sandbox.Game.Screens.Helpers
         {
             SlotCount = slotCount;
             PageCount = pageCount;
-            m_items = new MyToolbarItem[SlotCount*PageCount];
+            m_items = new MyToolbarSubItem[SlotCount*PageCount];
 
             m_toolbarType = type;
             Owner = null;
@@ -254,16 +270,19 @@ namespace Sandbox.Game.Screens.Helpers
             {
                 if (m_items[i] != null)
                 {
-                    MyObjectBuilder_ToolbarItem slotObjectBuilder = m_items[i].GetObjectBuilder();
-                    var data = m_items[i].GetObjectBuilder();
-                    if (data != null)
+                    if (m_items[i].CurrentItem != null)
                     {
-                        objectBuilder.Slots.Add(new MyObjectBuilder_Toolbar.Slot()
+                        MyObjectBuilder_ToolbarItem slotObjectBuilder = m_items[i].CurrentItem.GetObjectBuilder();
+                        var data = m_items[i].CurrentItem.GetObjectBuilder();
+                        if (data != null)
                         {
-                            Index = i,
-                            Item = "", // "Item" field is only for backwards compatibility, new items serialize into "Data"
-                            Data = data
-                        });
+                            objectBuilder.Slots.Add(new MyObjectBuilder_Toolbar.Slot()
+                            {
+                                Index = i,
+                                Item = "", // "Item" field is only for backwards compatibility, new items serialize into "Data"
+                                Data = data
+                            });
+                        }
                     }
                 }
             }
@@ -304,14 +323,14 @@ namespace Sandbox.Game.Screens.Helpers
                 CurrentPageChanged(this, new PageChangeArgs() { PageIndex = m_currentPage });
         }
 
-        public void SetItemAtIndex(int i, MyDefinitionId defId, MyObjectBuilder_ToolbarItem data)
+        public void SetItemAtIndex(int i, MyDefinitionId defId, MyObjectBuilder_ToolbarItem data, bool scrollingCategory = false)
         {
             if (!m_items.IsValidIndex(i))
                 return;
 
             MyDefinitionBase definition;
             if (MyDefinitionManager.Static.TryGetDefinition(defId, out definition))
-                SetItemAtIndex(i, MyToolbarItemFactory.CreateToolbarItem(data));
+                SetItemAtIndex(i, MyToolbarItemFactory.CreateToolbarItem(data), scrollingCategory);
         }
 
         public void SetItemAtSlot(int slot, MyToolbarItem item)
@@ -319,12 +338,42 @@ namespace Sandbox.Game.Screens.Helpers
             SetItemAtIndex(SlotToIndex(slot), item);
         }
 
-        public void SetItemAtIndex(int i, MyToolbarItem item)
+        public void SetItemAtIndex(int i, MyToolbarItem item, bool scrollingCategory = false)
         {
-            SetItemAtIndexInternal(i, item, false);
+            SetItemAtIndexInternal(i, item,false, scrollingCategory);
         }
 
-        private void SetItemAtIndexInternal(int i, MyToolbarItem item, bool initialization = false)
+        public void SetCategoryAtIndex(int i, MyGuiBlockCategoryDefinition category)
+        {
+            int inc = 0;
+            if (m_items[i] != null)
+            {
+                m_items[i].OnClose();
+            }
+
+            m_items[i] = new MyToolbarSubItem(category);
+            if (m_items[i].CurrentItem != null)
+            {
+                SetItemAtIndex(i, m_items[i].CurrentItem, true);
+            }
+            //Moved this into MyToolBarSubItem initalization
+            /*foreach(string itemID in category.ItemIds)
+            {
+                var split = itemID.Split('/');
+                MyObjectBuilderType type = new MyObjectBuilderType();
+                if (MyObjectBuilderType.TryParse("MyObjectBuilder_" + split[0], out type))
+                {
+                    MyDefinitionId blockid = new MyDefinitionId(type, split[1]);
+                    if (MyDefinitionManager.Static.TryGetDefinition(blockid, out outblock))
+                    {
+                        SetItemAtIndex(i, blockid, MyToolbarItemFactory.ObjectBuilderFromDefinition(outblock),true);
+                    }
+                    inc++;
+                }             
+            }*/
+        }
+
+        private void SetItemAtIndexInternal(int i, MyToolbarItem item, bool initialization = false, bool scrollingCategory = false)
         {
             if (!m_items.IsValidIndex(i))
                 return;
@@ -338,16 +387,23 @@ namespace Sandbox.Game.Screens.Helpers
 
             bool oldEnabledState = true;
             bool newEnabledState = true;
-
+            
             if (m_items[i] != null)
             {
-                oldEnabledState = m_items[i].Enabled;
-                m_items[i].OnClose();
+                if (m_items[i].CurrentItem != null)
+                {
+                    oldEnabledState = m_items[i].CurrentItem.Enabled;
+                    m_items[i].CurrentItem.OnClose();
+                }
             }
 
-            m_items[i] = item;
+            if (m_items[i] == null || scrollingCategory == false)
+            {
+                m_items[i] = new MyToolbarSubItem(null, item);
+            }
+            
 
-            if (m_items[i] != null)
+            if (m_items[i].CurrentItem != null)
             {
                 newEnabledState = true;
             }
@@ -418,7 +474,7 @@ namespace Sandbox.Game.Screens.Helpers
             {
                 for (int i = 0; i < m_items.Length; i++)
                 {
-                    if (m_items[i] == null) continue;
+                    if (m_items[i].CurrentItem == null) continue;
 
                     m_items[i].OnClose();
                     m_items[i] = null;
@@ -429,14 +485,14 @@ namespace Sandbox.Game.Screens.Helpers
             // Check if the toolbar refers to the removed block, in which case, disable the removed item.
             for (int i = 0; i < m_items.Length; i++)
             {
-                if (m_items[i] == null) continue;
+                if (m_items[i].CurrentItem == null) continue;
 
-                if (m_items[i] is IMyToolbarItemEntity)
+                if (m_items[i].CurrentItem is IMyToolbarItemEntity)
                 {
-                    IMyToolbarItemEntity item = (IMyToolbarItemEntity)m_items[i];
+                    IMyToolbarItemEntity item = (IMyToolbarItemEntity)m_items[i].CurrentItem;
                     if (item.CompareEntityIds(block.FatBlock.EntityId))
                     {
-                        m_items[i].SetEnabled(false);
+                        m_items[i].CurrentItem.SetEnabled(false);
                     }
                 }
             }
@@ -464,7 +520,7 @@ namespace Sandbox.Game.Screens.Helpers
                     SetItemAtIndex(v++, armorblockid, MyToolbarItemFactory.ObjectBuilderFromDefinition(smallthrust));
                 if (MyDefinitionManager.Static.TryGetDefinition(gyroid, out gyro))
                     SetItemAtIndex(v++, armorblockid, MyToolbarItemFactory.ObjectBuilderFromDefinition(gyro));
-
+                SetCategoryAtIndex(v++, MyDefinitionManager.Static.GetCategories()["LargeBlocks"]);
                 for (int i = v; i < m_items.Length; ++i)
                     SetItemAtIndex(i, null);
             }
@@ -566,7 +622,7 @@ namespace Sandbox.Game.Screens.Helpers
 
         public bool ActivateItemAtIndex(int index, bool checkIfWantsToBeActivated = false)
         {
-            var itemToActivate = m_items[index];
+            var itemToActivate = m_items[index].CurrentItem;
             if (StagedSelectedSlot.HasValue && SlotToIndex(StagedSelectedSlot.Value) != index)
                     StagedSelectedSlot = null;
             if (itemToActivate != null && itemToActivate.Enabled)
@@ -580,7 +636,10 @@ namespace Sandbox.Game.Screens.Helpers
                 return itemToActivate.Activate();
             }
             if (itemToActivate == null)
+            {
                 Unselect();
+            }
+                
             return false;
         }
 
@@ -626,7 +685,7 @@ namespace Sandbox.Game.Screens.Helpers
                 return false;
 
             if (m_items[idx] != null)
-                return m_items[idx].Enabled;
+                return m_items[idx].CurrentItem.Enabled;
 
             return true;
         }
@@ -637,7 +696,7 @@ namespace Sandbox.Game.Screens.Helpers
                 return null;
 
             if (m_items[idx] != null)
-                return m_items[idx].Icons;
+                return m_items[idx].CurrentItem.Icons;
 
             return null;
         }
@@ -658,6 +717,7 @@ namespace Sandbox.Game.Screens.Helpers
 
         public void Update()
         {
+            bool blockToBeSelected = false;
             ProfilerShort.Begin("MyToolbar.Update");
             if (MySession.Static == null)
             {
@@ -671,47 +731,112 @@ namespace Sandbox.Game.Screens.Helpers
             {
                 if (m_items[i] != null)
                 {
-                    var updated = m_items[i].Update(Owner, playerID);
-                    if (updated == MyToolbarItem.ChangeInfo.None) continue;
+                    if (m_items[i].CurrentItem != null)
+                    {
+                        var updated = m_items[i].CurrentItem.Update(Owner, playerID);
+                        if (updated == MyToolbarItem.ChangeInfo.None) continue;
 
-                    ToolbarItemUpdated(i, updated);
+                        ToolbarItemUpdated(i, updated);
+                    }
                 }
             }
 
             int? previousSelectedSlot = m_selectedSlot;
-            if (!StagedSelectedSlot.HasValue)
-            {   
-                m_selectedSlot = null;
-                for (int i = 0; i < SlotCount; i++)
+            if (m_selectedSlot.HasValue)
+            {
+                if (m_items[m_selectedSlot.Value].CurrentItem != null)
                 {
-                    if (m_items[SlotToIndex(i)] != null)
+                    if (!m_items[m_selectedSlot.Value].CurrentItem.WantsToBeSelected)
                     {
-                        if (m_items[SlotToIndex(i)].WantsToBeSelected)
+                        if (!StagedSelectedSlot.HasValue)
                         {
-                            m_selectedSlot = i;
+                            m_selectedSlot = null;
+                            for (int i = 0; i < SlotCount; i++)
+                            {
+                                if (m_items[SlotToIndex(i)] != null)
+                                {
+                                    if (m_items[SlotToIndex(i)].CurrentItem != null)
+                                    {
+                                        if (m_items[SlotToIndex(i)].CurrentItem.WantsToBeSelected)
+                                        {
+                                            m_selectedSlot = i;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        else
+                        {
+                            if (!m_selectedSlot.HasValue || m_selectedSlot.Value != StagedSelectedSlot.Value)
+                            {
+                                m_selectedSlot = StagedSelectedSlot;
+                                var item = m_items[SlotToIndex(m_selectedSlot.Value)];
+                                if (item != null)
+                                {
+                                    if (item.CurrentItem != null)
+                                    {
+                                        if (!item.CurrentItem.ActivateOnClick)
+                                        {
+                                            ActivateItemAtSlot(m_selectedSlot.Value);
+                                            m_activateSelectedItem = false;
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    m_activateSelectedItem = true;
+                                    Unselect();
+                                }
+                            }
+                        }
+                    }
+                }
+
+            }
+            else
+            {
+                if (!StagedSelectedSlot.HasValue)
+                {
+                    m_selectedSlot = null;
+                    for (int i = 0; i < SlotCount; i++)
+                    {
+                        if (m_items[SlotToIndex(i)] != null)
+                        {
+                            if (m_items[SlotToIndex(i)].CurrentItem != null)
+                            {
+                                if (m_items[SlotToIndex(i)].CurrentItem.WantsToBeSelected)
+                                {
+                                    m_selectedSlot = i;
+                                }
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    if (!m_selectedSlot.HasValue || m_selectedSlot.Value != StagedSelectedSlot.Value)
+                    {
+                        m_selectedSlot = StagedSelectedSlot;
+                        var item = m_items[SlotToIndex(m_selectedSlot.Value)];
+                        if (item != null)
+                        {
+                            if (item.CurrentItem != null)
+                            {
+                                if (!item.CurrentItem.ActivateOnClick)
+                                {
+                                    ActivateItemAtSlot(m_selectedSlot.Value);
+                                    m_activateSelectedItem = false;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            m_activateSelectedItem = true;
+                            Unselect();
                         }
                     }
                 }
             }
-            else
-            {
-                if (!m_selectedSlot.HasValue || m_selectedSlot.Value != StagedSelectedSlot.Value)
-                {
-                    m_selectedSlot = StagedSelectedSlot;
-                    var item = m_items[SlotToIndex(m_selectedSlot.Value)];
-                    if (item != null && !item.ActivateOnClick)
-                    {
-                        ActivateItemAtSlot(m_selectedSlot.Value);
-                        m_activateSelectedItem = false;
-                    }
-                    else
-                    {
-                        m_activateSelectedItem = true;
-                        Unselect();
-                    }
-                }
-            }
-
             if (previousSelectedSlot != m_selectedSlot && SelectedSlotChanged != null)
                 SelectedSlotChanged(this, new SlotArgs() { SlotNumber = m_selectedSlot });
 
@@ -725,9 +850,9 @@ namespace Sandbox.Game.Screens.Helpers
             if (MySession.Static == null)
                 return;
 
-            if (m_items[index] != null)
+            if (m_items[index].CurrentItem != null)
             {
-                m_items[index].Update(Owner, GetControllerPlayerID());
+                m_items[index].CurrentItem.Update(Owner, GetControllerPlayerID());
             }
         }
 

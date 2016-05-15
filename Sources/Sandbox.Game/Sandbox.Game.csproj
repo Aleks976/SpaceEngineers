@@ -130,8 +130,7 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
     <Reference Include="VRage.Native">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\3rd\VRage.Native\release\$(Platform)\VRage.Native.dll</HintPath>
+      <HintPath>..\..\3rd\VRage.Native\debug\x64\VRage.Native.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -799,12 +798,14 @@
     <Compile Include="Game\Screens\DebugScreens\Render\MyGuiScreenDebugRenderAtmosphere.cs" />
     <Compile Include="Game\Screens\DebugScreens\Render\MyGuiScreenDebugRenderShadows.cs" />
     <Compile Include="Game\Screens\Helpers\MyToolbarItemUsable.cs" />
+    <Compile Include="Game\Screens\Helpers\MyToolbarSubItem.cs" />
     <Compile Include="Game\Screens\MyGuiScreenAdminMenu.cs" />
     <Compile Include="Game\Screens\DebugScreens\Game\MyGuiScreenDebugVoxelsMaterials.cs" />
     <Compile Include="Game\Screens\Helpers\MyBattleLoadListResult.cs" />
     <Compile Include="Game\Screens\Helpers\MyGuiControlStats.cs" />
     <Compile Include="Game\Screens\MyGuiScreenAdvancedScenarioSettings.cs" />
     <Compile Include="Game\Screens\MyGuiScreenBriefing.cs" />
+    <Compile Include="Game\Screens\MyGuiScreenJoinCustomMatch.cs" />
     <Compile Include="Game\Screens\MyGuiScreenMission.cs" />
     <Compile Include="Game\Screens\MyGuiScreenScenarioBase.cs" />
     <Compile Include="Game\Screens\MyGuiScreenScenarioMpClient.cs" />
@@ -945,6 +946,7 @@
     <Compile Include="Game\Screens\Triggers\MyGuiScreenTriggerSomeoneWon.cs" />
     <Compile Include="Game\Screens\Triggers\MyGuiScreenTriggerTime.cs" />
     <Compile Include="Game\Screens\Triggers\MyGuiScreenTriggerTimeLimit.cs" />
+    <Compile Include="Game\GUI\MyGuiScreenVehicleEditorSaveLoad.cs" />
     <Compile Include="Game\SessionComponents\MyGridPickupComponent.cs" />
     <Compile Include="Game\SessionComponents\MyHitReportingComponent.cs" />
     <Compile Include="Game\SessionComponents\MyRopeComponent.cs" />
@@ -1427,10 +1429,6 @@
     <ProjectReference Include="..\VRage.Input\VRage.Input.csproj">
       <Project>{f77d0a49-f0a1-4e8a-80c8-cbf1842bf2d4}</Project>
       <Name>VRage.Input</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\VRage.Network\VRage.Network.csproj">
-      <Project>{76080059-9756-4065-bce8-373e7150a8f7}</Project>
-      <Name>VRage.Network</Name>
     </ProjectReference>
     <ProjectReference Include="..\VRage.Library\VRage.Library.csproj">
       <Project>{26FE022E-42AB-40BE-BA9D-97CBE34E7D99}</Project>

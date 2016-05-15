@@ -20,6 +20,9 @@ using VRage.ObjectBuilders;
 using Sandbox.Engine.Networking;
 using Sandbox.Graphics;
 using VRage.Game;
+using System.IO;
+using Sandbox.Game.Entities;
+using Sandbox.Game.GameSystems;
 using VRage.Library.Utils;
 
 namespace Sandbox.Game.Gui
@@ -56,7 +59,7 @@ namespace Sandbox.Game.Gui
         {
             base.RecreateControls(constructor);
 
-            AddCaption(MyCommonTexts.ScreenCaptionNewWorld);
+            AddCaption(MyCommonTexts.ScreenMenuButtonNewWorld);
 
             Vector2 menuPositionOrigin = new Vector2(0.0f, -m_size.Value.Y / 2.0f + (0.147f - m_additionalButtons * 0.013f));
             Vector2 buttonDelta = new Vector2(0.15f, 0);
@@ -64,7 +67,7 @@ namespace Sandbox.Game.Gui
             //MyStringId? otherButtonsForbidden = null;
             //MyStringId newGameText = MySpaceTexts.StartDemo;
             int buttonPositionCounter = 0;
-
+            /*
             if (MyPerGameSettings.EnableTutorials)
             {
                 // tutorials
@@ -74,23 +77,24 @@ namespace Sandbox.Game.Gui
                     //toolTip: MyTexts.GetString(MySpaceTexts.ToolTipNewWorldCustomWorld),
                     onButtonClick: OnTutorialClick);
 
-                Controls.Add(tutorialButton);
+                //Controls.Add(tutorialButton);
             }
-
+            */
             //  Quickstart
             var quickstartButton = new MyGuiControlButton(
                 position: menuPositionOrigin + buttonPositionCounter++ * MyGuiConstants.MENU_BUTTONS_POSITION_DELTA,
                 text: MyTexts.Get(MyCommonTexts.ScreenNewWorldButtonQuickstart),
-                toolTip: MyTexts.GetString(MySpaceTexts.ToolTipNewWorldQuickstart),
-                onButtonClick: OnQuickstartClick);
-
+                //toolTip: MyTexts.GetString(MySpaceTexts.ToolTipNewWorldQuickstart),
+                onButtonClick: OnVehicleEditorClick);
+            Controls.Add(quickstartButton);
+            /*
             //  Custom Game
             var customGameButton = new MyGuiControlButton(
                 position: menuPositionOrigin + buttonPositionCounter++ * MyGuiConstants.MENU_BUTTONS_POSITION_DELTA,
                 text: MyTexts.Get(MyCommonTexts.ScreenNewWorldButtonCustomWorld),
                 toolTip: MyTexts.GetString(MyCommonTexts.ToolTipNewWorldCustomWorld),
                 onButtonClick: OnCustomGameClick);
-            Controls.Add(quickstartButton);
+            
             Controls.Add(customGameButton);
 
             if (MyPerGameSettings.EnableScenarios)
@@ -104,7 +108,7 @@ namespace Sandbox.Game.Gui
 
                 Controls.Add(scenarioButton);
             }
-
+            */
             if (MyFakes.ENABLE_BATTLE_SYSTEM)
             {
                 var battleButton = new MyGuiControlButton(
@@ -130,17 +134,17 @@ namespace Sandbox.Game.Gui
             return "MyGuiScreenStartSandbox";
         }
 
-        void OnQuickstartClick(MyGuiControlButton sender)
+        void OnVehicleEditorClick(MyGuiControlButton sender)
         {
-            StartQuickstart();
+            StartVehicleEditor();
         }
 
-        protected virtual void StartQuickstart()
+        protected virtual void StartVehicleEditor()
         {
             // TODO: Move to derived screen in SpaceEngineers.Game
             if (MySandboxGame.IsDirectX11) // Running DirectX11, start planet quickstart
             {
-                QuickstartSandbox(GetQuickstartSettings(), CreatePlanetQuickstartArgs());
+                QuickstartVehicleEditor(CreateVehicleEditorSettings(), CreateVehicleEditorArgs());
             }
             else if (MyDirectXHelper.IsDx11Supported()) // DirectX11 not enabled, messagebox
             {
@@ -212,11 +216,40 @@ namespace Sandbox.Game.Gui
             return settings;
         }
 
+        private static MyObjectBuilder_SessionSettings CreateVehicleEditorSettings()
+        {
+            var settings = MyObjectBuilderSerializer.CreateNewObject<MyObjectBuilder_SessionSettings>();
+            settings.GameMode = MyGameModeEnum.Creative;
+            settings.VehicleEditor = true;
+            settings.OnlineMode = MyOnlineModeEnum.OFFLINE;
+            settings.EnableToolShake = true;
+            settings.EnableFlora = (MyPerGameSettings.Game == GameEnum.SE_GAME) && MyFakes.ENABLE_PLANETS;
+            settings.EnableSunRotation = false;
+            settings.VoxelGeneratorVersion = MyVoxelConstants.VOXEL_GENERATOR_VERSION;
+            settings.CargoShipsEnabled = false;
+            settings.EnableOxygen = true;
+            settings.EnableSpiders = false;
+            settings.EnableCyberhounds = false;
+            settings.ProceduralDensity = 0f;
+            settings.AutoSave = false;
+            settings.EnvironmentHostility = MyEnvironmentHostilityEnum.SAFE;
+            return settings;
+        }
+
         private static MyWorldGenerator.Args CreateBasicQuickstartArgs()
         {
             return new MyWorldGenerator.Args()
             {
                 Scenario = MyDefinitionManager.Static.GetScenarioDefinition(new MyDefinitionId(typeof(MyObjectBuilder_ScenarioDefinition), "EasyStart1")),
+                AsteroidAmount = 0
+            };
+        }
+
+        private static MyWorldGenerator.Args CreateVehicleEditorArgs()
+        {
+            return new MyWorldGenerator.Args()
+            {
+                Scenario = MyDefinitionManager.Static.GetScenarioDefinition(new MyDefinitionId(typeof(MyObjectBuilder_ScenarioDefinition), "VehicleEditor")), 
                 AsteroidAmount = 0
             };
         }
@@ -248,6 +281,135 @@ namespace Sandbox.Game.Gui
 
             MyLog.Default.WriteLine("QuickstartSandbox - END");
         }
+
+        public static void QuickstartVehicleEditor(MyObjectBuilder_SessionSettings quickstartSettings, MyWorldGenerator.Args? quickstartArgs)
+        {
+            MyLog.Default.WriteLine("Start vehicle editor - START");
+
+            MyScreenManager.RemoveAllScreensExcept(null);
+
+            const string VehicleEditorWorldName = "VehicleEditorWorldV0.0.1";
+
+            string savePath = MyLocalCache.GetSessionSavesPath(MyUtils.StripInvalidChars(VehicleEditorWorldName),false,false);
+
+            //If vehicle editing world already exists load it
+            if (Directory.Exists(savePath)) //Simple check for now....
+            {
+                LoadSingleplayerSession(savePath);
+            }
+            else
+            {
+            MyGuiScreenGamePlay.StartLoading(delegate
+            {
+                var settings = (quickstartSettings != null) ? quickstartSettings : CreateVehicleEditorSettings();
+                var args = (quickstartArgs != null) ? quickstartArgs.Value : CreateVehicleEditorArgs();
+                var mods = new List<MyObjectBuilder_Checkpoint.ModItem>(0);
+                MyAnalyticsHelper.SetEntry(MyGameEntryEnum.Quickstart);
+                MySession.Start(VehicleEditorWorldName, "", "", settings, mods, args);
+            });
+                }
+            MyLog.Default.WriteLine("Start vehicle editor - END");
+        }
+
+        #region WorldLoading
+        public static void LoadSingleplayerSession(string sessionPath)
+        {
+            MyLog.Default.WriteLine("LoadSession() - Start");
+            MyLog.Default.WriteLine(sessionPath);
+
+            ulong checkpointSizeInBytes;
+            var checkpoint = MyLocalCache.LoadCheckpoint(sessionPath, out checkpointSizeInBytes);
+            CheckDx11AndLoad(checkpoint, sessionPath, checkpointSizeInBytes);
+        }
+
+        private static void CheckDx11AndLoad(MyObjectBuilder_Checkpoint checkpoint, string sessionPath, ulong checkpointSizeInBytes)
+        {
+            bool needsDx11 = checkpoint.RequiresDX >= 11;
+            if (!needsDx11 || MySandboxGame.IsDirectX11)
+            {
+                LoadSingleplayerSession(checkpoint, sessionPath, checkpointSizeInBytes);
+            }
+            else
+            {
+                MyJoinGameHelper.HandleDx11Needed();
+            }
+        }
+
+        public static void LoadSingleplayerSession(MyObjectBuilder_Checkpoint checkpoint, string sessionPath, ulong checkpointSizeInBytes)
+        {
+            if (!MySession.IsCompatibleVersion(checkpoint))
+            {
+                MyLog.Default.WriteLine(MyTexts.Get(MyCommonTexts.DialogTextIncompatibleWorldVersion).ToString());
+                MyGuiSandbox.AddScreen(MyGuiSandbox.CreateMessageBox(
+                    messageCaption: MyTexts.Get(MyCommonTexts.MessageBoxCaptionError),
+                    messageText: MyTexts.Get(MyCommonTexts.DialogTextIncompatibleWorldVersion),
+                    buttonType: MyMessageBoxButtonsType.OK));
+                MyLog.Default.WriteLine("LoadSession() - End");
+                return;
+            }
+
+            if (!MySteamWorkshop.CheckLocalModsAllowed(checkpoint.Mods, checkpoint.Settings.OnlineMode == MyOnlineModeEnum.OFFLINE))
+            {
+                MyLog.Default.WriteLine(MyTexts.Get(MyCommonTexts.DialogTextLocalModsDisabledInMultiplayer).ToString());
+                MyGuiSandbox.AddScreen(MyGuiSandbox.CreateMessageBox(
+                    messageCaption: MyTexts.Get(MyCommonTexts.MessageBoxCaptionError),
+                    messageText: MyTexts.Get(MyCommonTexts.DialogTextLocalModsDisabledInMultiplayer),
+                    buttonType: MyMessageBoxButtonsType.OK));
+                MyLog.Default.WriteLine("LoadSession() - End");
+                return;
+            }
+
+
+            MySteamWorkshop.DownloadModsAsync(checkpoint.Mods, delegate(bool success)
+            {
+                if (success || (checkpoint.Settings.OnlineMode == MyOnlineModeEnum.OFFLINE) && MySteamWorkshop.CanRunOffline(checkpoint.Mods))
+                {
+                    //Sandbox.Audio.MyAudio.Static.Mute = true;
+
+                    MyScreenManager.CloseAllScreensNowExcept(null);
+                    MyGuiSandbox.Update(VRage.Game.MyEngineConstants.UPDATE_STEP_SIZE_IN_MILLISECONDS);
+
+                    // May be called from gameplay, so we must make sure we unload the current game
+                    if (MySession.Static != null)
+                    {
+                        MySession.Static.Unload();
+                        MySession.Static = null;
+                    }
+                    MyGuiScreenGamePlay.StartLoading(delegate
+                    {
+                        MyAnalyticsHelper.SetEntry(MyGameEntryEnum.Load);
+                        MySession.Load(sessionPath, checkpoint, checkpointSizeInBytes);
+                    });
+                }
+                else
+                {
+                    MyLog.Default.WriteLine(MyTexts.Get(MyCommonTexts.DialogTextDownloadModsFailed).ToString());
+
+                    if (MySteam.IsOnline)
+                    {
+                        MyGuiSandbox.AddScreen(MyGuiSandbox.CreateMessageBox(
+                        messageCaption: MyTexts.Get(MyCommonTexts.MessageBoxCaptionError),
+                        messageText: MyTexts.Get(MyCommonTexts.DialogTextDownloadModsFailed),
+                        buttonType: MyMessageBoxButtonsType.OK, callback: delegate(MyGuiScreenMessageBox.ResultEnum result)
+                        {
+                            if (MyFakes.QUICK_LAUNCH != null)
+                                MyGuiScreenMainMenu.ReturnToMainMenu();
+                        }));
+                    }
+                    else
+                    {
+                        MyGuiSandbox.AddScreen(MyGuiSandbox.CreateMessageBox(
+                                                      messageCaption: MyTexts.Get(MyCommonTexts.MessageBoxCaptionError),
+                                                      messageText: MyTexts.Get(MyCommonTexts.DialogTextDownloadModsFailedSteamOffline),
+                                                      buttonType: MyMessageBoxButtonsType.OK));
+                    }
+
+                }
+                MyLog.Default.WriteLine("LoadSession() - End");
+            });
+
+        }
+        #endregion
 
         public void OnCustomGameClick(MyGuiControlButton sender)
         {

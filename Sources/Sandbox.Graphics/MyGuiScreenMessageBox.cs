@@ -23,6 +23,7 @@ namespace Sandbox.Graphics.GUI
         YES_NO_CANCEL,          //  YES, NO and CANCEL buttons
         YES_NO_TIMEOUT,         //  YES and NO buttons; And Timeout so if no pressed YES in selected time, message box ends as if NO was pressed        
         NONE_TIMEOUT,           // No buttons dialog dissapears after Timeout
+        TEXTBOX,                // Prompts the user and returns text
     }
 
     public class MyGuiScreenMessageBox : MyGuiScreenBase
@@ -37,6 +38,8 @@ namespace Sandbox.Graphics.GUI
         }
 
         static readonly Style[] m_styles;
+
+        public string textboxText;
 
         static MyGuiScreenMessageBox() 
         {
@@ -86,6 +89,7 @@ namespace Sandbox.Graphics.GUI
         private StringBuilder m_messageText;
         private StringBuilder m_messageCaption;
         private ResultEnum m_focusedResult;
+        private MyGuiControlTextbox textBox = null;
 
         public new bool CanHideOthers
         { 
@@ -192,6 +196,7 @@ namespace Sandbox.Graphics.GUI
             MyGuiControlBase yesButton = null;
             MyGuiControlBase noButton = null;
             MyGuiControlBase cancelButton = null;
+ 
             switch (m_buttonType)
             {
                 case MyMessageBoxButtonsType.NONE:
@@ -212,6 +217,13 @@ namespace Sandbox.Graphics.GUI
                     Controls.Add(yesButton = MakeButton(new Vector2(-(buttonOffsetX + buttonSize.X * 0.5f), buttonY), m_style, m_yesButtonText, OnYesClick, MyGuiDrawAlignEnum.HORISONTAL_RIGHT_AND_VERTICAL_BOTTOM));
                     Controls.Add(noButton = MakeButton(new Vector2(0, buttonY), m_style, m_noButtonText, OnNoClick, MyGuiDrawAlignEnum.HORISONTAL_CENTER_AND_VERTICAL_BOTTOM));
                     Controls.Add(cancelButton = MakeButton(new Vector2((buttonOffsetX + buttonSize.X * 0.5f), buttonY), m_style, m_cancelButtonText, OnCancelClick, MyGuiDrawAlignEnum.HORISONTAL_LEFT_AND_VERTICAL_BOTTOM));
+                    break;
+
+                case MyMessageBoxButtonsType.TEXTBOX:
+                    Controls.Add(yesButton = MakeButton(new Vector2(-buttonOffsetX, buttonY), m_style, m_yesButtonText, OnYesClick, MyGuiDrawAlignEnum.HORISONTAL_RIGHT_AND_VERTICAL_BOTTOM));
+                    Controls.Add(noButton = MakeButton(new Vector2(buttonOffsetX, buttonY), m_style, m_noButtonText, OnNoClick, MyGuiDrawAlignEnum.HORISONTAL_LEFT_AND_VERTICAL_BOTTOM));
+                    textBox = new MyGuiControlTextbox(new Vector2(0f, buttonY - 0.12f),"");
+                    Controls.Add(textBox);
                     break;
 
                 default:
@@ -265,6 +277,17 @@ namespace Sandbox.Graphics.GUI
 
         private void OnClick(ResultEnum result)
         {
+            if (m_buttonType == MyMessageBoxButtonsType.TEXTBOX)
+            {
+                if ((textBox.Text == "" || textBox.Text == null) && result == ResultEnum.YES)
+                {
+                    m_messageText = new StringBuilder("Textbox can't be empty");
+                    RecreateControls(false);
+                    return;
+                }
+                textboxText = textBox.Text;
+            }
+                
             if (CloseBeforeCallback)
             {
                 CloseInternal();

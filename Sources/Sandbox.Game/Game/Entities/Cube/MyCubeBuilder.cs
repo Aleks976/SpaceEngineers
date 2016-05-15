@@ -1867,6 +1867,37 @@ namespace Sandbox.Game.Entities
                 }
             }
 
+            int mouseWheelValue = MyInput.Static.MouseScrollWheelValue();
+            int oldMouseWheelValue = MyInput.Static.PreviousMouseScrollWheelValue();
+
+            if (mouseWheelValue != oldMouseWheelValue)
+            {
+                if (!MyInput.Static.IsAnyShiftKeyPressed() && !MyInput.Static.IsAnyAltKeyPressed() && !MyInput.Static.IsAnyCtrlKeyPressed())
+                {
+                    if (MyToolbarComponent.CurrentToolbar != null)
+                    {
+                        if (MyToolbarComponent.CurrentToolbar.SelectedSubItem != null)
+                        {
+                            if (MyToolbarComponent.CurrentToolbar.SelectedSubItem.ToolbarItems.Length == 1)
+                            {
+                                MyToolbarComponent.CurrentToolbar.SetCategoryAtIndex(MyToolbarComponent.CurrentToolbar.SelectedSlot.Value,MyDefinitionManager.Static.GetCategories()["LargeBlocks"]);
+                            }
+                            else
+                            {
+                                if (mouseWheelValue > oldMouseWheelValue)
+                                {
+                                    MyToolbarComponent.CurrentToolbar.SelectedSubItem.GoToNextItem();
+                                }
+                                else
+                                {
+                                    MyToolbarComponent.CurrentToolbar.SelectedSubItem.GoToPreviousItem();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             if (MyFakes.ENABLE_BLOCK_STAGES && CurrentBlockDefinition != null && CurrentBlockDefinitionStages.Count > 0)
             {
                 bool? switchForward = null;

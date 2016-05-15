@@ -61,11 +61,13 @@ namespace Sandbox.Game.Gui
             ProfilerShort.Begin("MyGuiScreenCubeBuilder.RecreateControls");
 
             bool showRightControls = !(MySession.Static.ControlledEntity is MyShipController) || (MySession.Static.ControlledEntity is MyShipController && (MySession.Static.ControlledEntity as MyShipController).BuildingMode) || MyToolbarComponent.GlobalBuilding;
-            
+
+            //Disable right buttons if in vehicle editor
+            showRightControls &= !MySession.Static.VehicleEditorMode;
             //Disable right buttons if current spectator is official spectator
             if (MySession.Static.SurvivalMode)
                 showRightControls &= !(MySession.Static.IsCameraUserControlledSpectator() && !MyInput.Static.ENABLE_DEVELOPER_KEYS && MySession.Static.Settings.EnableSpectator);
-
+             
             m_smallShipButton = (MyGuiControlButton)Controls.GetControlByName("ButtonSmall");
             m_smallShipButton.Visible = showRightControls;
             m_smallShipButton.ButtonClicked += smallShipButton_OnButtonClick;

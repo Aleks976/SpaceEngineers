@@ -360,6 +360,37 @@ namespace Sandbox.Game.Gui
             }
         }
 
+        public MyGuiDetailScreenDefault(Action<MyGuiControlListbox.Item> callBack, MyGuiControlListbox.Item selectedItem, MyGuiScreenVehicleEditorSaveLoad parent, MyGuiCompositeTexture thumbnailTexture, float textScale) :
+            base(false, parent, thumbnailTexture, selectedItem, textScale)
+        {
+            var prefabPath = Path.Combine(m_defaultBlueprintFolder, m_blueprintName, "bp.sbc");
+            this.callBack = callBack;
+
+            if (File.Exists(prefabPath))
+            {
+                m_loadedPrefab = LoadPrefab(prefabPath);
+
+                if (m_loadedPrefab == null)
+                {
+                    MyGuiSandbox.AddScreen(MyGuiSandbox.CreateMessageBox(
+                        buttonType: MyMessageBoxButtonsType.OK,
+                        styleEnum: MyMessageBoxStyleEnum.Error,
+                        messageCaption: new StringBuilder("Error"),
+                        messageText: new StringBuilder("Failed to load the blueprint file.")
+                        ));
+                    m_killScreen = true;
+                }
+                else
+                {
+                    RecreateControls(true);
+                }
+            }
+            else
+            {
+                m_killScreen = true;
+            }
+        }
+
         public override string GetFriendlyName()
         {
             return "MyGuiDetailScreenDefault";

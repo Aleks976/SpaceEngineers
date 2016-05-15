@@ -46,7 +46,7 @@ namespace Sandbox.Game.Gui
         private static readonly StringBuilder APP_VERSION = MyFinalBuildConstants.APP_VERSION_STRING;
         private static readonly StringBuilder STEAM_INACTIVE = new StringBuilder("STEAM NOT AVAILABLE");
         private static readonly StringBuilder NOT_OBFUSCATED = new StringBuilder("NOT OBFUSCATED");
-        private static readonly StringBuilder NON_OFFICIAL = new StringBuilder(" NON-OFFICIAL");
+        private static readonly StringBuilder NON_OFFICIAL = new StringBuilder(" OFFICIAL");
         private static readonly StringBuilder PLATFORM = new StringBuilder(Environment.Is64BitProcess ? " 64-bit" : " 32-bit");
         private static StringBuilder BranchName = new StringBuilder(50);
         private static StringBuilder m_stringCache = new StringBuilder(128);
@@ -140,7 +140,8 @@ namespace Sandbox.Game.Gui
                 // Credits
                 // Exit to windows
                 int buttonIndex = MyPerGameSettings.MultiplayerEnabled ? 8 : 7;
-                Controls.Add(MakeButton(leftButtonPositionOrigin - (buttonIndex--) * MyGuiConstants.MENU_BUTTONS_POSITION_DELTA, MyCommonTexts.ScreenMenuButtonNewWorld, OnClickNewWorld));
+                Controls.Add(MakeButton(leftButtonPositionOrigin - (buttonIndex--) * MyGuiConstants.MENU_BUTTONS_POSITION_DELTA, MyCommonTexts.ScreenMenuButtonNewWorld, 
+                    OnClickNewWorld));
                 Controls.Add(MakeButton(leftButtonPositionOrigin - (buttonIndex--) * MyGuiConstants.MENU_BUTTONS_POSITION_DELTA, MyCommonTexts.ScreenMenuButtonLoadWorld, OnClickLoad));
                 if (MyPerGameSettings.MultiplayerEnabled)
                     Controls.Add(MakeButton(leftButtonPositionOrigin - (buttonIndex--) * MyGuiConstants.MENU_BUTTONS_POSITION_DELTA, MyCommonTexts.ScreenMenuButtonJoinWorld, OnJoinWorld));
@@ -170,7 +171,7 @@ namespace Sandbox.Game.Gui
                 var saveButton = MakeButton(leftButtonPositionOrigin - ((float)(--buttonRowIndex)) * MyGuiConstants.MENU_BUTTONS_POSITION_DELTA, MyCommonTexts.ScreenMenuButtonSave, OnClickSaveWorld);
                 var saveAsButton = MakeButton(leftButtonPositionOrigin - ((float)(--buttonRowIndex)) * MyGuiConstants.MENU_BUTTONS_POSITION_DELTA, MyCommonTexts.LoadScreenButtonSaveAs, OnClickSaveAs);
 
-                if (!Sync.IsServer || (MySession.Static.Battle))
+                if (!Sync.IsServer || (MySession.Static.Battle) || MySession.Static.VehicleEditorMode)
                 {
                     saveButton.Enabled = false;
                     saveButton.ShowTooltipWhenDisabled = true;
@@ -424,7 +425,7 @@ namespace Sandbox.Game.Gui
         {
             if (MySteam.IsOnline)
             {
-                MyGuiSandbox.AddScreen(new MyGuiScreenJoinGame());
+                MyGuiSandbox.AddScreen(new MyGuiScreenJoinCustomMatch());
             }
             else
             {
@@ -484,7 +485,10 @@ namespace Sandbox.Game.Gui
                 MySandboxGame.Config.Save();
             }
             else
+            {
                 MyGuiSandbox.AddScreen(MyGuiSandbox.CreateScreen<MyGuiScreenStartSandbox>());
+            }
+                
         }
 
         private unsafe void OnClickLoad(MyGuiControlBase sender)
@@ -508,8 +512,14 @@ namespace Sandbox.Game.Gui
 
         private void OnExitToMainMenuClick(MyGuiControlButton sender)
         {
-            if (!Sync.IsServer || MySession.Static.Battle)
+            if (!Sync.IsServer || MySession.Static.Battle || MySession.Static.VehicleEditorMode)
             {
+                if (MySession.Static.VehicleEditorMode)
+                {
+                    MyGuiScreenVehicleEditorSaveLoad guiScreen = new MyGuiScreenVehicleEditorSaveLoad(true);
+                    MyGuiSandbox.AddScreen(guiScreen);
+                    guiScreen.SaveVehicleEditorShip(true,true);
+                }
                 UnloadAndExitToMenu();
                 return;
             }

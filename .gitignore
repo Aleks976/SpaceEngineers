@@ -21,7 +21,9 @@ Sources/SpaceEngineers/Content/Shaders
 3rd/**/VRage.Library.xml
 3rd/**/VRage.Math.xml
 Sources/SpaceEngineers/Content/Audio/
+Sources/SpaceEngineers/Content/Data/
 Sources/SpaceEngineers/Content/Fonts/*
+Sources/SpaceEngineers/Content/Effects2/*
 Sources/SpaceEngineers/Content/Missions/
 Sources/SpaceEngineers/Content/Models/
 Sources/SpaceEngineers/Content/Textures/
@@ -32,6 +34,8 @@ Sources/SpaceEngineers/Content/AISchool/
 Sources/SpaceEngineers/Content/Brains/
 Sources/SpaceEngineers/Content/ShaderCache/
 Sources/SpaceEngineers/Content/Particles/
+Output/Content/*
+Content/*
 user.props
 3rd/RakNet/Help/
 3rd/RakNet/Samples/
@@ -42,3 +46,8 @@ user.props
 3rd/SteamSDK/release/x64
 3rd/VRage.Native/debug/x64
 3rd/VRage.Native/release/x64
+*.sbs
+Sources/VRage.Game/VRage.Game.csproj
+3rd/HavokWrapper_SE/release/x64/HavokWrapper.dll
+/Sources/VRage.Render/Effects2/BackgroundCube/MyBackgroundCube.fx
+/Sources/VRage.Render/Effects2/BackgroundCube/MyBackgroundCube.fx

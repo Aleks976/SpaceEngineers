@@ -87,6 +87,8 @@ namespace Sandbox.Game.Gui
     public abstract class MyGuiBlueprintScreenBase : MyGuiScreenDebugBase
     {
         public static string m_localBlueprintFolder = Path.Combine(MyFileSystem.UserDataPath, "Blueprints", "local");
+        public static string m_airplaneBlueprintFolder = Path.Combine(MyFileSystem.UserDataPath, "AirplaneBlueprints", "local");
+        public static string m_airplaneWorkshopBlueprintFolder = Path.Combine(MyFileSystem.UserDataPath, "AirplaneBlueprints", "workshop");
         public static string m_workshopBlueprintFolder = Path.Combine(MyFileSystem.UserDataPath, "Blueprints", "workshop");
         public static string m_defaultBlueprintFolder = Path.Combine(MyFileSystem.ContentPath, "Data", "Blueprints");
         public static readonly string m_workshopBlueprintSuffix = ".sbb";
@@ -141,15 +143,22 @@ namespace Sandbox.Game.Gui
 
         protected static void SavePrefabToFile(MyObjectBuilder_Definitions prefab, string name = null, bool replace = false, MyBlueprintTypeEnum type = MyBlueprintTypeEnum.LOCAL)
         { 
+            
+
             if (name == null)
             {
                 name = MyUtils.StripInvalidChars(MyCubeBuilder.Static.Clipboard.CopiedGridsName);
             }
 
             string file = "";
+
             if (type == MyBlueprintTypeEnum.LOCAL)
             {
                 file = Path.Combine(m_localBlueprintFolder, name);
+            }
+            else if(type == MyBlueprintTypeEnum.AIRPLANE)
+            {
+                file = Path.Combine(m_airplaneBlueprintFolder, name);
             }
             else 
             {
@@ -312,9 +321,13 @@ namespace Sandbox.Game.Gui
             return loadedPrefab;
         }
 
-        protected bool DeleteBlueprint(string name)
+        protected bool DeleteBlueprint(string name, string blueprintFolder = "default")
         {
             string file = Path.Combine(m_localBlueprintFolder, name);
+            if (blueprintFolder != "default")
+            {
+                file = Path.Combine(blueprintFolder, name);
+            }
             if (Directory.Exists(file))
             {
                 Directory.Delete(file, true);

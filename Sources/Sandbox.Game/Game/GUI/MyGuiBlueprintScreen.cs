@@ -44,7 +44,8 @@ namespace Sandbox.Game.Gui
         STEAM,
         LOCAL,
         SHARED,
-        DEFAULT
+        DEFAULT,
+        AIRPLANE,
     }
 
     public class MyBlueprintItemInfo

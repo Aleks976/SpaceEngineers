@@ -123,6 +123,13 @@ namespace Sandbox.Game.Gui
             {
                 MyModAPIHelper.OnSessionLoaded();
                 MyGuiSandbox.AddScreen(MyGuiSandbox.CreateScreen(MyPerGameSettings.GUI.HUDScreen));
+                if (MySession.Static != null)
+                {
+                    if (MySession.Static.VehicleEditorMode)
+                    {
+                        MyGuiSandbox.AddScreen(new MyGuiScreenVehicleEditorSaveLoad());
+                    }
+                }
             };
             MyGuiSandbox.AddScreen(loadScreen);
         }
@@ -356,6 +363,7 @@ namespace Sandbox.Game.Gui
                     }
                 }
 
+
                 // This was added because planets, CTG testers were frustrated from testing, because they can't move in creative
                 if (MySession.Static != null && (MySession.Static.CreativeMode || MySession.Static.IsAdminModeEnabled(Sync.MyId)) && MyInput.Static.IsNewKeyPressed(MyKeys.Space) && MyInput.Static.IsAnyCtrlKeyPressed())
                 {
@@ -385,6 +393,12 @@ namespace Sandbox.Game.Gui
             {
                 MyGuiAudio.PlaySound(MyGuiSounds.HudClick);
                 SwitchCamera();
+            }
+            int scrollValue = MyInput.Static.MouseScrollWheelValue();
+
+            if (scrollValue != 0)
+            {
+                //TODO: make scrolling swap through blocks
             }
 
             if (MyInput.Static.IsNewGameControlPressed(MyControlsSpace.HELP_SCREEN))
@@ -666,42 +680,45 @@ namespace Sandbox.Game.Gui
             // Quick save or quick load.
             if (MyInput.Static.IsNewKeyPressed(MyKeys.F5))
             {
-                if (!MySession.Static.IsScenario)
+                if (!MySession.Static.VehicleEditorMode)
                 {
-                    MyGuiAudio.PlaySound(MyGuiSounds.HudMouseClick);
-                    var currentSession = MySession.Static.CurrentPath;
-
-                    if (MyInput.Static.IsAnyShiftKeyPressed())
+                    if (!MySession.Static.IsScenario)
                     {
-                        if (Sync.IsServer)
+                        MyGuiAudio.PlaySound(MyGuiSounds.HudMouseClick);
+                        var currentSession = MySession.Static.CurrentPath;
+
+                        if (MyInput.Static.IsAnyShiftKeyPressed())
                         {
-                            if (!MyAsyncSaving.InProgress)
+                            if (Sync.IsServer)
                             {
-                                var messageBox = MyGuiSandbox.CreateMessageBox(
-                                    buttonType: MyMessageBoxButtonsType.YES_NO,
-                                    messageText: MyTexts.Get(MyCommonTexts.MessageBoxTextAreYouSureYouWantToQuickSave),
-                                    messageCaption: MyTexts.Get(MyCommonTexts.MessageBoxCaptionPleaseConfirm),
-                                    callback: delegate(MyGuiScreenMessageBox.ResultEnum callbackReturn)
-                                    {
-                                        if (callbackReturn == MyGuiScreenMessageBox.ResultEnum.YES)
-                                            MyAsyncSaving.Start(() => MySector.ResetEyeAdaptation = true);//black screen after save
-                                    });
-                                messageBox.SkipTransition = true;
-                                messageBox.CloseBeforeCallback = true;
-                                MyGuiSandbox.AddScreen(messageBox);
+                                if (!MyAsyncSaving.InProgress)
+                                {
+                                    var messageBox = MyGuiSandbox.CreateMessageBox(
+                                        buttonType: MyMessageBoxButtonsType.YES_NO,
+                                        messageText: MyTexts.Get(MyCommonTexts.MessageBoxTextAreYouSureYouWantToQuickSave),
+                                        messageCaption: MyTexts.Get(MyCommonTexts.MessageBoxCaptionPleaseConfirm),
+                                        callback: delegate(MyGuiScreenMessageBox.ResultEnum callbackReturn)
+                                        {
+                                            if (callbackReturn == MyGuiScreenMessageBox.ResultEnum.YES)
+                                                MyAsyncSaving.Start(() => MySector.ResetEyeAdaptation = true);//black screen after save
+                                        });
+                                    messageBox.SkipTransition = true;
+                                    messageBox.CloseBeforeCallback = true;
+                                    MyGuiSandbox.AddScreen(messageBox);
+                                }
                             }
+                            else
+                                MyHud.Notifications.Add(MyNotificationSingletons.ClientCannotSave);
+                        }
+                        else if (Sync.IsServer)
+                        {
+                            ShowLoadMessageBox(currentSession);
                         }
                         else
-                            MyHud.Notifications.Add(MyNotificationSingletons.ClientCannotSave);
-                    }
-                    else if (Sync.IsServer)
-                    {
-                        ShowLoadMessageBox(currentSession);
-                    }
-                    else
-                    {
-                        // Is multiplayer client, reconnect
-                        ShowReconnectMessageBox();
+                        {
+                            // Is multiplayer client, reconnect
+                            ShowReconnectMessageBox();
+                        }
                     }
                 }
             }
@@ -782,7 +799,11 @@ namespace Sandbox.Game.Gui
                     else
                     {
                         // F10
-                        if (MyFakes.ENABLE_BATTLE_SYSTEM && MySession.Static.Battle)
+                        if (MySession.Static.VehicleEditorMode)
+                        {
+                            MyGuiSandbox.AddScreen(new Sandbox.Game.Gui.MyGuiScreenVehicleEditorSaveLoad());
+                        }
+                        else if (MyFakes.ENABLE_BATTLE_SYSTEM && MySession.Static.Battle)
                         {
                             if (MyPerGameSettings.GUI.BattleBlueprintScreen != null)
                                 MyGuiSandbox.AddScreen(MyGuiSandbox.CreateScreen(MyPerGameSettings.GUI.BattleBlueprintScreen));

@@ -412,7 +412,7 @@ namespace Sandbox.Game.Gui
 
         void block_CustomNameChanged(MyTerminalBlock obj)
         {
-            System.Diagnostics.Debug.Assert(m_blockListbox != null, "block_CustomNameChanged was not unregistered!");
+            //System.Diagnostics.Debug.Assert(m_blockListbox != null, "block_CustomNameChanged was not unregistered!");
 
             if (m_blockListbox == null)
                 return;

@@ -11,6 +11,8 @@ namespace VRage.Library.Utils
     {
         Creative,
         Survival,
+        VehicleEditor,
+        AirPlaneBattle,
     }
 
 

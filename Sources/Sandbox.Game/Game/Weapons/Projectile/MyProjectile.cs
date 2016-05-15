@@ -128,7 +128,7 @@ namespace Sandbox.Game.Weapons
             m_directionNormalized = directionNormalized;
             m_speed = ammoDefinition.DesiredSpeed * (ammoDefinition.SpeedVar > 0.0f ? MyUtils.GetRandomFloat(1 - ammoDefinition.SpeedVar, 1 + ammoDefinition.SpeedVar) : 1.0f);
             m_velocity = initialVelocity + m_directionNormalized * m_speed; ;
-            m_maxTrajectory = ammoDefinition.MaxTrajectory * MyUtils.GetRandomFloat(0.8f, 1.2f); // +/- 20%
+            m_maxTrajectory = ammoDefinition.MaxTrajectory * MyUtils.GetRandomFloat(0.8f, 1.2f) * 10f; // +/- 20%
 
             m_checkIntersectionIndex = checkIntersectionCounter % CHECK_INTERSECTION_INTERVAL;
             checkIntersectionCounter += 3;

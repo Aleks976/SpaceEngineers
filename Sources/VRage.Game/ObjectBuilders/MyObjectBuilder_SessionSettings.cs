@@ -24,6 +24,11 @@ namespace VRage.Game
         public MyGameModeEnum GameMode = MyGameModeEnum.Creative;
 
         [ProtoMember]
+        [Display(Name = "Vehicle Editor Mode")]
+        [GameRelation(Game.Shared)]
+        public bool VehicleEditor = false;
+
+        [ProtoMember]
         [Display(Name = "Inventory size multiplier")]
         [GameRelation(Game.Shared)]
         public float InventorySizeMultiplier = 10;
@@ -406,6 +411,7 @@ namespace VRage.Game
         CATACLYSM,
         CATACLYSM_UNREAL,
     }
+
 
     [XmlRoot("MyConfigDedicated")]
     public class MyConfigDedicatedData<T> where T : MyObjectBuilder_SessionSettings, new()

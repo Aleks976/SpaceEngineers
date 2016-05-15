@@ -18,19 +18,18 @@ namespace Sandbox.Game.Screens.Helpers
 {
     public class MyGuiControlToolbar : MyGuiControlBase
     {
-        protected static StringBuilder m_textCache = new StringBuilder();
-
-        protected MyGuiControlGrid m_toolbarItemsGrid;
-        protected MyGuiControlLabel m_selectedItemLabel;
-        protected MyGuiControlPanel m_colorVariantPanel;
-        protected MyGuiControlContextMenu m_contextMenu;
-        protected List<MyGuiControlLabel> m_pageLabelList = new List<MyGuiControlLabel>();
-        protected MyToolbar m_shownToolbar;
+        private static StringBuilder m_textCache = new StringBuilder();
+        private MyGuiControlGrid m_toolbarItemsGrid;
+        private MyGuiControlLabel m_selectedItemLabel;
+        private MyGuiControlPanel m_colorVariantPanel;
+        private MyGuiControlContextMenu m_contextMenu;
+        private List<MyGuiControlLabel> m_pageLabelList = new List<MyGuiControlLabel>();
+        private MyToolbar m_shownToolbar;
         public MyToolbar ShownToolbar
         {
-            get
-            {
-                return m_shownToolbar;
+            get 
+            { 
+                return m_shownToolbar; 
             }
         }
         public MyGuiControlGrid ToolbarGrid
@@ -62,7 +61,7 @@ namespace Sandbox.Game.Screens.Helpers
         {
             base.OnVisibleChanged();
             MyToolbarComponent.IsToolbarControlShown = this.Visible;
-        }
+        }        
 
         public override void OnRemoving()
         {
@@ -77,9 +76,9 @@ namespace Sandbox.Game.Screens.Helpers
                 m_shownToolbar.CurrentPageChanged -= Toolbar_CurrentPageChanged;
                 m_shownToolbar = null;
             }
-
+            
             MyToolbarComponent.IsToolbarControlShown = false;
-
+            
             base.OnRemoving();
         }
 
@@ -106,7 +105,7 @@ namespace Sandbox.Game.Screens.Helpers
 
         public override void Draw(float transitionAlpha, float backgroundTransitionAlpha)
         {
-            Color c = (new Vector3(MyPlayer.SelectedColor.X, MathHelper.Clamp(MyPlayer.SelectedColor.Y + 0.8f, 0f, 1f), MathHelper.Clamp(MyPlayer.SelectedColor.Z + 0.55f, 0f, 1f))).HSVtoColor();
+			Color c = (new Vector3(MyPlayer.SelectedColor.X, MathHelper.Clamp(MyPlayer.SelectedColor.Y + 0.8f, 0f, 1f), MathHelper.Clamp(MyPlayer.SelectedColor.Z + 0.55f, 0f, 1f))).HSVtoColor();
             m_colorVariantPanel.ColorMask = c.ToVector4();
             base.Draw(transitionAlpha, backgroundTransitionAlpha);
         }
@@ -225,7 +224,7 @@ namespace Sandbox.Game.Screens.Helpers
                 m_selectedItemLabel.OriginAlign = MyGuiDrawAlignEnum.HORISONTAL_RIGHT_AND_VERTICAL_BOTTOM;
                 m_colorVariantPanel.OriginAlign = MyGuiDrawAlignEnum.HORISONTAL_RIGHT_AND_VERTICAL_BOTTOM;
                 m_colorVariantPanel.Visible = MyFakes.ENABLE_BLOCK_COLORING; // character != null;
-
+                
                 if (toolbar.ShowHolsterSlot)
                     SetGridItemAt(slotCount, new MyToolbarItemEmpty(), new string[] { @"Textures\GUI\Icons\HideWeapon.dds" }, null, MyTexts.GetString(MyCommonTexts.HideWeapon));
 
@@ -397,7 +396,7 @@ namespace Sandbox.Game.Screens.Helpers
         }
 
         private void Toolbar_ItemChanged(MyToolbar toolbar, MyToolbar.IndexArgs args)
-        {
+        {            
             UpdateItemAtIndex(toolbar, args.ItemIndex);
         }
 
@@ -577,6 +576,6 @@ namespace Sandbox.Game.Screens.Helpers
 
         #endregion
 
-
+       
     }
 }

@@ -140,6 +140,7 @@ namespace Sandbox.Game.World
         public bool HasAdminRights { get { return SteamAPI.Instance != null && HasPlayerAdminRights(SteamAPI.Instance.GetSteamUserId()); } }
         public bool CreativeMode { get { return Settings.GameMode == MyGameModeEnum.Creative; } }
         public bool SurvivalMode { get { return Settings.GameMode == MyGameModeEnum.Survival; } }
+        public bool VehicleEditorMode { get { return Settings.VehicleEditor; } }
         public bool AutoHealing { get { return Settings.AutoHealing; } }
         public bool ThrusterDamage { get { return Settings.ThrusterDamage; } }
         public bool WeaponsEnabled { get { return Settings.WeaponsEnabled; } }
@@ -167,7 +168,7 @@ namespace Sandbox.Game.World
 
         public bool Battle { get { return MyFakes.ENABLE_BATTLE_SYSTEM && Settings.Battle; } }
 
-        public bool EnableSpiders
+        public bool EnableSpiders 
         {
             get
             {
@@ -203,6 +204,9 @@ namespace Sandbox.Game.World
         BoundingBoxD IMySession.WorldBoundaries { get { return WorldBoundaries; } }
 
         public MySyncLayer SyncLayer { get; private set; }
+
+        public MyCubeGrid VehicleEditor_Vehicle;
+        public MyCubeGrid VehicleEditor_LargeGrid;
 
         public readonly MyVoxelMaps VoxelMaps = new MyVoxelMaps();
         public readonly MyFactionCollection Factions = new MyFactionCollection();
@@ -381,9 +385,9 @@ namespace Sandbox.Game.World
         /// <param name="steamId"></param>
         /// <returns></returns>
         public bool IsUserAdmin( ulong steamId )
-        {
+            {
             return MyMultiplayer.Static.IsAdmin( steamId );
-        }
+            }
 
         /// <summary>
         /// Checks if a given player is promoted to space master.
@@ -402,7 +406,7 @@ namespace Sandbox.Game.World
         }
 
         public void EnableAdminMode(ulong user,bool value)
-        {
+            {
             if (value && IsAdmin)
             {
                 m_adminMode.Add(user);
@@ -465,7 +469,7 @@ namespace Sandbox.Game.World
                 MySandboxGame.UserPauseToggle();
             }
             else
-            {
+            {           
                 MySandboxGame.UserPauseToggle();
             }
         }
@@ -576,7 +580,7 @@ namespace Sandbox.Game.World
         private void LoadGameDefinition(MyObjectBuilder_Checkpoint checkpoint)
         {
             if (checkpoint.GameDefinition.IsNull())
-            {
+        {
                 LoadGameDefinition();
                 return;
             }
@@ -587,7 +591,7 @@ namespace Sandbox.Game.World
             SessionComponentEnabled = checkpoint.SessionComponentEnabled;
 
             RegisterComponentsFromAssemblies();
-        }
+            }
 
 
         bool m_updateAllowed;
@@ -829,6 +833,35 @@ namespace Sandbox.Game.World
             return checkpoint.AppVersion <= MyFinalBuildConstants.APP_VERSION;
         }
 
+        private static void VehicleEditorInjection()
+        {
+            if (MySession.Static.VehicleEditorMode == true)
+            {
+                foreach (MyEntity entityToCheck in MyEntities.GetEntities())
+                {
+                    if (entityToCheck.GetType() == typeof(MyCubeGrid))
+                    {
+                        if (((MyCubeGrid)entityToCheck).DisplayName == "SmallBaseShip")
+                        {
+                            MySession.Static.VehicleEditor_Vehicle = (MyCubeGrid)entityToCheck;
+                            MySession.Static.VehicleEditor_Vehicle.OnBlockAdded += MyGuiScreenHudSpace.forceRecalculateVehicleData_event_added;
+                            MySession.Static.VehicleEditor_Vehicle.OnBlockRemoved += MyGuiScreenHudSpace.forceRecalculateVehicleData_event_removed;
+                        }
+                        else if (((MyCubeGrid)entityToCheck).DisplayName == "VehicleEditorLargeGrid")
+                        {
+                            MySession.Static.VehicleEditor_LargeGrid = (MyCubeGrid)entityToCheck;
+                            MySession.Static.VehicleEditor_LargeGrid.Physics.ConvertToStatic();
+                            MySession.Static.VehicleEditor_LargeGrid.DestructibleBlocks = false;
+                            /*foreach (MySlimBlock block in MySession.Static.VehicleEditor_LargeGrid.GetBlocks())
+                            {
+                                
+                            }*/
+                        }
+                    }
+                }
+            }
+        }
+
         #region New game
 
         /// <summary>
@@ -917,14 +950,19 @@ namespace Sandbox.Game.World
             //Because blocks fills SubBlocks in this method..
             //TODO: Create LoadPhase2
             MyEntities.UpdateOnceBeforeFrame();
-
-            Static.Save();
-            MyLocalCache.SaveLastLoadedTime(Static.CurrentPath, DateTime.Now);
+            if (!MySession.Static.VehicleEditorMode)
+            {
+                MySession.Static.Save();
+            }
+            MyLocalCache.SaveLastLoadedTime(MySession.Static.CurrentPath, DateTime.Now);
 
             Static.BeforeStartComponents();
 
             // Initialize Spectator light
             MySpectatorCameraController.Static.InitLight(false);
+
+            VehicleEditorInjection();
+
         }
 
         public MyGameDefinition GameDefinition { get; set; }
@@ -939,7 +977,7 @@ namespace Sandbox.Game.World
             MyDefinitionManager.Static.LoadData(world.Checkpoint.Mods);
 
             Static = new MySession(multiplayerSession.SyncLayer);
-            
+
 
             Static.LoadGameDefinition(world.Checkpoint);
 
@@ -1124,7 +1162,9 @@ namespace Sandbox.Game.World
             Sync.Layer.TransportLayer.ClearStats();
 
             Static.BeforeStartComponents();
-            
+
+            VehicleEditorInjection();
+
             MyLog.Default.WriteLineAndConsole("Session loaded");
             ProfilerShort.End();
         }
@@ -1752,13 +1792,13 @@ namespace Sandbox.Game.World
                 case MyCameraControllerEnum.Entity:
                     Debug.Assert(cameraEntity != null);
                     if (!MyFinalBuildConstants.IS_OFFICIAL)
-                        MySandboxGame.Log.WriteLine("CameraAttachedTo: Entity");
+                    MySandboxGame.Log.WriteLine("CameraAttachedTo: Entity");
                     Static.CameraController = (IMyCameraController)cameraEntity;
                     Static.CameraController.IsInFirstPersonView = true;
                     break;
                 case MyCameraControllerEnum.Spectator:
                     if (!MyFinalBuildConstants.IS_OFFICIAL)
-                        MySandboxGame.Log.WriteLine("CameraAttachedTo: Spectator");
+                    MySandboxGame.Log.WriteLine("CameraAttachedTo: Spectator");
                     Static.CameraController = MySpectatorCameraController.Static;
                     MySpectatorCameraController.Static.SpectatorCameraMovement = MySpectatorCameraMovementEnum.UserControlled;
                     if (position.HasValue)
@@ -1767,7 +1807,7 @@ namespace Sandbox.Game.World
 
                 case MyCameraControllerEnum.SpectatorFixed:
                     if (!MyFinalBuildConstants.IS_OFFICIAL)
-                        MySandboxGame.Log.WriteLine("CameraAttachedTo: SpectatorFixed");
+                    MySandboxGame.Log.WriteLine("CameraAttachedTo: SpectatorFixed");
                     Static.CameraController = MySpectatorCameraController.Static;
                     MySpectatorCameraController.Static.SpectatorCameraMovement = MySpectatorCameraMovementEnum.None;
                     if (position.HasValue)
@@ -1776,7 +1816,7 @@ namespace Sandbox.Game.World
 
                 case MyCameraControllerEnum.SpectatorDelta:
                     if (!MyFinalBuildConstants.IS_OFFICIAL)
-                        MySandboxGame.Log.WriteLine("CameraAttachedTo: SpectatorDelta");
+                    MySandboxGame.Log.WriteLine("CameraAttachedTo: SpectatorDelta");
                     Static.CameraController = MySpectatorCameraController.Static;
                     MySpectatorCameraController.Static.SpectatorCameraMovement = MySpectatorCameraMovementEnum.ConstantDelta;
                     if (position.HasValue)
@@ -1785,7 +1825,7 @@ namespace Sandbox.Game.World
 
                 case MyCameraControllerEnum.ThirdPersonSpectator:
                     if (!MyFinalBuildConstants.IS_OFFICIAL)
-                        MySandboxGame.Log.WriteLine("CameraAttachedTo: ThirdPersonSpectator");
+                    MySandboxGame.Log.WriteLine("CameraAttachedTo: ThirdPersonSpectator");
 
                     if (cameraEntity != null)
                         Static.CameraController = (IMyCameraController)cameraEntity;
@@ -1935,7 +1975,7 @@ namespace Sandbox.Game.World
         {
             if (Sync.IsServer)
             {
-                MyMultiplayer.RaiseStaticEvent(x => OnServerSaving, false);
+                MyMultiplayer.RaiseStaticEvent(x => OnServerSaving, false); 
             }
         }
         public string ThumbPath
@@ -2057,7 +2097,7 @@ namespace Sandbox.Game.World
             checkpoint.ControlledEntities = Sync.Players.SerializeControlledEntities();
 
             checkpoint.SpectatorPosition = new MyPositionAndOrientation(ref spectatorMatrix);
-            checkpoint.SpectatorIsLightOn = MySpectatorCameraController.Static.IsLightOn;
+            checkpoint.SpectatorIsLightOn = MySpectatorCameraController.Static.IsLightOn; 
             //checkpoint.SpectatorCameraMovement = MySpectator.Static.SpectatorCameraMovement;
             checkpoint.SpectatorDistance = (float)MyThirdPersonSpectator.Static.GetViewerDistance();
             checkpoint.CameraController = cameraControllerEnum;

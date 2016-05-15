@@ -16,7 +16,7 @@ namespace VRage
         // values matter, they are saved in config
         // when making localizations moddable (if ever), we should get rid of this enum
 
-        English = 0,
+        English = 26,
         Czech = 1,
         Slovak = 2,
         German = 3,
@@ -42,6 +42,7 @@ namespace VRage
         Turkish = 23,
         Latvian = 24,
         ChineseChina = 25,
+        EnglishPlane = 0
     }
 
 
@@ -109,6 +110,7 @@ namespace VRage
             AddLanguage(MyLanguagesEnum.Turkish,                 "tr", "TR", displayName: "Türkçe");
             AddLanguage(MyLanguagesEnum.Latvian,                 "lv",       displayName: "Latviešu", guiTextScale: 0.87f);
             //AddLanguage(MyLanguagesEnum.ChineseChina,            "zh", "CN", displayName: "Chinese-China", guiTextScale: 0.87f);
+            AddLanguage(MyLanguagesEnum.EnglishPlane, "plane", displayName: "Plane Conversion");
         }
 
         private static void AddLanguage(MyLanguagesEnum id, string cultureName, string subcultureName = null, string displayName = null, float guiTextScale = 1f, bool isCommunityLocalized = true)
