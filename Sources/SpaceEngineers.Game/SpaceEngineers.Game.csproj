@@ -56,9 +56,8 @@
     <RootNamespace>SpaceEngineers.Game</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="HavokWrapper, Version=1.0.5877.23574, Culture=neutral, processorArchitecture=AMD64">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\3rd\HavokWrapper_SE\debug\x64\HavokWrapper.dll</HintPath>
+    <Reference Include="HavokWrapper">
+      <HintPath>..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\SpaceEngineers\Bin64\HavokWrapper.dll</HintPath>
     </Reference>
     <Reference Include="SteamSDK">
       <SpecificVersion>False</SpecificVersion>

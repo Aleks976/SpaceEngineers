@@ -51,3 +51,5 @@ Sources/VRage.Game/VRage.Game.csproj
 3rd/HavokWrapper_SE/release/x64/HavokWrapper.dll
 /Sources/VRage.Render/Effects2/BackgroundCube/MyBackgroundCube.fx
 /Sources/VRage.Render/Effects2/BackgroundCube/MyBackgroundCube.fx
+SpaceEngineers.psess
+*.vsp
