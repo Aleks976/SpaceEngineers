@@ -90,7 +90,12 @@ namespace Sandbox.Game.Entities
 
         private float m_currentCameraShakePower = 0f;
 
+        bool? m_lastNearFlag = null;
+        private int m_forcedFpsTimeoutMs = 0;
+        private const int m_forcedFpsTimeoutDefaultMs = 500;
+
         protected Action<MyEntity> m_pilotClosedHandler;
+        private bool? m_pilotJetpackEnabledBackup;
 
         public float GlassDirt = 1.0f;
 
@@ -108,6 +113,20 @@ namespace Sandbox.Game.Entities
                 {
                     UpdateCameraAfterChange();
                 }
+            }
+        }
+
+        public override bool ForceFirstPersonCamera
+        {
+            get
+            {
+                return base.ForceFirstPersonCamera && m_forcedFpsTimeoutMs <= 0;
+            }
+            set
+            {
+                if (value && !base.ForceFirstPersonCamera)
+                    m_forcedFpsTimeoutMs = m_forcedFpsTimeoutDefaultMs;
+                base.ForceFirstPersonCamera = value;
             }
         }
 
@@ -490,6 +509,9 @@ namespace Sandbox.Game.Entities
             base.UpdateBeforeSimulation();
             if (m_soundEmitter != null && m_soundEmitter.VolumeMultiplier < 1f)
                 m_soundEmitter.VolumeMultiplier = Math.Min(1f, m_soundEmitter.VolumeMultiplier + 0.005f);
+
+            if (m_forcedFpsTimeoutMs > 0)
+                m_forcedFpsTimeoutMs -= MyEngineConstants.UPDATE_STEP_SIZE_IN_MILLISECONDS;
         }
 
         public override void UpdateBeforeSimulation10()
@@ -783,6 +805,9 @@ namespace Sandbox.Game.Entities
                 if (m_pilot.Physics.CharacterProxy != null)
                     m_pilot.Physics.CharacterProxy.ImmediateSetWorldTransform = false;
 
+                if (m_pilotJetpackEnabledBackup.HasValue && m_pilot.JetpackComp != null)
+                    m_pilot.JetpackComp.TurnOnJetpack(m_pilotJetpackEnabledBackup.Value);
+
                 if (Parent != null && Parent.Physics != null) // Cockpit could be removing the pilot after it no longer belongs to any grid (e.g. during a split)
                 {
                     m_pilot.Physics.LinearVelocity = Parent.Physics.LinearVelocity;
@@ -921,7 +946,10 @@ namespace Sandbox.Game.Entities
             {
                 var jetpack = m_pilot.JetpackComp;
                 if (jetpack != null)
+                {
                     jetpack.SwitchThrusts();
+                    m_pilotJetpackEnabledBackup = null;
+                }
             }
         }
 
@@ -1128,6 +1156,17 @@ namespace Sandbox.Game.Entities
                 m_storeOriginalPlayerWorldMatrix.Value = storeOriginalPilotWorld;
             }
 
+            var jetpack = m_pilot.JetpackComp;
+            if (jetpack != null)
+            {
+                m_pilotJetpackEnabledBackup = jetpack.Running;
+                m_pilot.JetpackComp.TurnOnJetpack(false);
+            }
+            else
+            {
+                m_pilotJetpackEnabledBackup = null;
+            }
+
             m_lastPilot = pilot;
             if (GetInCockpitSound != MySoundPair.Empty)
                 PlayUseSound(true);
@@ -1140,8 +1179,6 @@ namespace Sandbox.Game.Entities
             m_pilot.Sit(m_enableFirstPerson, pilotIsLocal, m_isLargeCockpit || !m_enableShipControl, BlockDefinition.CharacterAnimation);
             CubeGrid.SetInventoryMassDirty();
         }
-
-        bool? m_lastNearFlag = null;
 
         // These weapons will not be remembered when sitting inside the cockpit
         // TODO: move to SBC

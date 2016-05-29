@@ -36,7 +36,7 @@ using VRage.Game.ModAPI.Ingame;
 namespace Sandbox.Game.Entities.Cube
 {
     [MyCubeBlockType(typeof(MyObjectBuilder_ShipConnector))]
-    partial class MyShipConnector : MyFunctionalBlock, IMyInventoryOwner, IMyConveyorEndpointBlock, IMyShipConnector
+    public partial class MyShipConnector : MyFunctionalBlock, IMyInventoryOwner, IMyConveyorEndpointBlock, IMyShipConnector
     {
         /// <summary>
         /// Represents connector state, atomic for sync, 8 B + 1b + 1b/12.5B
@@ -112,8 +112,21 @@ namespace Sandbox.Game.Entities.Cube
 
         public int DetectedGridCount { get { return m_detectedGrids.Count; } }
 
-        static MyShipConnector()
+        public MyShipConnector()
         {
+            CreateTerminalControls();
+
+            m_connectionState.ValueChanged += (o) => OnConnectionStateChanged();
+            m_connectionState.ValidateNever(); // Never set by client
+            m_manualDisconnectTime = new MyTimeSpan(-DisconnectSleepTime.Ticks);
+            Strength.Validate = (o) => Strength >= 0 && Strength <= 1;
+        }
+
+        static void CreateTerminalControls()
+        {
+            if (MyTerminalControlFactory.AreControlsCreated<MyShipConnector>())
+                return;
+
             var throwOut = new MyTerminalControlOnOffSwitch<MyShipConnector>("ThrowOut", MySpaceTexts.Terminal_ThrowOut);
             throwOut.Getter = (block) => block.ThrowOut;
             throwOut.Setter = (block, value) => block.ThrowOut.Value = value;
@@ -163,14 +176,6 @@ namespace Sandbox.Game.Entities.Cube
                     result.AppendFormatedDecimal("", x.Strength * 100, 4, " %");
             };
             MyTerminalControlFactory.AddControl(strength);
-        }
-
-        public MyShipConnector()
-        {
-            m_connectionState.ValueChanged += (o) => OnConnectionStateChanged();
-            m_connectionState.ValidateNever(); // Never set by client
-            m_manualDisconnectTime = new MyTimeSpan(-DisconnectSleepTime.Ticks);
-            Strength.Validate = (o) => Strength >= 0 && Strength <= 1;
         }
 
         private void OnConnectionStateChanged()
@@ -492,7 +497,7 @@ namespace Sandbox.Game.Entities.Cube
             var entities = body.GetAllEntities();
             foreach (var entity in entities)
             {
-                m_detectedGrids.Remove(entity as MyCubeGrid);
+                 m_detectedGrids.Remove(entity as MyCubeGrid);
             }
             entities.Clear();
             ProfilerShort.End();
@@ -609,7 +614,7 @@ namespace Sandbox.Game.Entities.Cube
         private void TryAttach(long? otherConnectorId = null)
         {
             var otherConnector = FindOtherConnector(otherConnectorId);
-            if (otherConnector != null && otherConnector.FriendlyWithBlock(this))
+            if (otherConnector != null && otherConnector.FriendlyWithBlock(this) && CubeGrid.Physics != null  && otherConnector.CubeGrid.Physics != null)
             {
                 var pos = ConstraintPositionWorld();
                 var otherPos = otherConnector.ConstraintPositionWorld();
@@ -622,13 +627,13 @@ namespace Sandbox.Game.Entities.Cube
 
                     if (master == this)
                     {
-                        this.CreateConstraint(otherConnector);
+                        CreateConstraint(otherConnector);
                         otherConnector.IsMaster = false;
                     }
                     else
                     {
                         otherConnector.CreateConstraint(this);
-                        this.IsMaster = false;
+                        IsMaster = false;
                     }
                 }
             }
@@ -724,13 +729,16 @@ namespace Sandbox.Game.Entities.Cube
                 MyShipConnector connector;
                 if (!InConstraint && MyEntities.TryGetEntityById<MyShipConnector>(state.OtherEntityId, out connector) && connector.FriendlyWithBlock(this) && connector.Closed == false && connector.MarkedForClose == false)
                 {
-                    if (Sync.IsServer == false && state.MasterToSlaveGrid.HasValue)
+                    if (Physics != null && connector.Physics != null)
                     {
-                        this.CubeGrid.WorldMatrix = MatrixD.Multiply(state.MasterToSlaveGrid.Value, connector.WorldMatrix);
+                        if (Sync.IsServer == false && state.MasterToSlaveGrid.HasValue)
+                        {
+                            CubeGrid.WorldMatrix = MatrixD.Multiply(state.MasterToSlaveGrid.Value, connector.WorldMatrix);
+                        }
+                        CreateConstraintNosync(connector);
+                        UpdateEmissivity();
+                        m_other.UpdateEmissivity();
                     }
-                    this.CreateConstraintNosync(connector);
-                    UpdateEmissivity();
-                    m_other.UpdateEmissivity();
                 }
 
             }

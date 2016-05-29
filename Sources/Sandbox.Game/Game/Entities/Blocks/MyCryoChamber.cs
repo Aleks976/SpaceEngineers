@@ -57,15 +57,17 @@ namespace Sandbox.Game.Entities.Blocks
         }
 
         protected override MyStringId LeaveNotificationHintText { get { return MySpaceTexts.NotificationHintLeaveCryoChamber; } }
-        static MyCryoChamber()
-        {
-            m_horizonIndicator.Enabled = (x) => false;
-            m_horizonIndicator.Visible = (x) => false;
-        }
+
         public MyCryoChamber()
         {
             ControllerInfo.ControlAcquired += OnCryoChamberControlAcquired;
             m_attachedPlayerId.ValueChanged += (x) => AttachedPlayerChanged();
+        }
+
+        //override this in order not to show horizon
+        protected override bool CanHaveHorizon()
+        {
+            return false;
         }
 
         public override void Init(MyObjectBuilder_CubeBlock objectBuilder, MyCubeGrid cubeGrid)
