@@ -206,6 +206,7 @@ namespace Sandbox.Game.Gui
 
         public override void HandleInput(bool receivedFocusInThisUpdate)
         {
+            var variable = MyEntities.GetEntities();
             bool handled = false;
             if (MyCubeBuilder.Static != null)
             {
