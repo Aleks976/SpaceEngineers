@@ -39,12 +39,13 @@ namespace Sandbox.Game.Weapons
         MyExplosionTypeEnum m_explosionType;
         private MyEntity m_collidedEntity;
         Vector3D? m_collisionPoint;
+        MyCubeBlock launcher_block;
         long m_owner;
         private float m_smokeEffectOffsetMultiplier = 0.4f;
 
         private MyEntity3DSoundEmitter m_soundEmitter;
 
-        public MyMissile()
+        public MyMissile(MyCubeBlock launcherBlock = null)
         {
             m_collidedEntity_OnClose = collidedEntity_OnClose;
             m_soundEmitter = new MyEntity3DSoundEmitter(this);
@@ -56,6 +57,7 @@ namespace Sandbox.Game.Weapons
                 m_soundEmitter.EmitterMethods[MyEntity3DSoundEmitter.MethodsEnum.CanHear].Add(expr);
             }
             (PositionComp as MyPositionComponent).WorldPositionChanged = WorldPositionChanged;
+            launcher_block = launcherBlock;
         }
 
         public virtual void Init(MyWeaponPropertiesWrapper weaponProperties)
@@ -291,6 +293,19 @@ namespace Sandbox.Game.Weapons
             if (collidedEntity == null)
                 return;
 
+            var collidedGrid = collidedEntity as MyCubeGrid;
+            
+            if (launcher_block != null && collidedGrid != null) //Need to ignore collision all together, or else missile will possibly interfere with the ship in funny ways
+            {
+                var collidedBlockPosition = collidedGrid.WorldToGridInteger(value.Position);
+                if (launcher_block.CubeGrid == collidedGrid && collidedBlockPosition != null) //Collision happened on the same grid, SCREWS UP IF GRID IS ATTACED WITH LANDING GEAR
+                {
+                    if (/*Vector3I.Dot(launcher_block.Position, collidedBlockPosition) != 0*/launcher_block.CubeGrid.RayCastBlocks(value.Position,value.Position) == null) //If the block is directly in front of the launcher hit it anyway
+                    {
+                        return;
+                    }
+                }
+            }
             if (!Sandbox.Game.Multiplayer.Sync.IsServer)
             {
                 Close();

@@ -40,6 +40,7 @@ namespace Sandbox.Game.Weapons
             public MatrixD DummyToUse { get { return Dummies[DummyIndex]; } }
         }
 
+        public MyCubeBlock launcherBlock;
         public const int AMMO_PER_SHOOT = 1;
 
         #region Fields
@@ -264,9 +265,9 @@ namespace Sandbox.Game.Weapons
             initialVelocity += missileDeviatedVector * missileAmmoDefinition.MissileInitialSpeed;
 
             if (m_user.Launcher != null)
-                MyMissiles.Add(weaponProperties, initialPosition, initialVelocity, missileDeviatedVector, m_user.OwnerId);
+                MyMissiles.Add(weaponProperties, initialPosition, initialVelocity, missileDeviatedVector, m_user.OwnerId, launcherBlock);
             else
-                MyMissiles.AddUnsynced(weaponProperties, initialPosition + 2*missileDeviatedVector, initialVelocity, missileDeviatedVector, m_user.OwnerId);//start missile 2 beters in front of launcher - prevents hit of own turret
+                MyMissiles.AddUnsynced(weaponProperties, initialPosition + 2*missileDeviatedVector, initialVelocity, missileDeviatedVector, m_user.OwnerId, launcherBlock);//start missile 2 beters in front of launcher - prevents hit of own turret
         }
 
         public void Shoot(Vector3 initialVelocity, MyEntity owner = null)

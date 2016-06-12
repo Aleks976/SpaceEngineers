@@ -44,6 +44,7 @@ namespace Sandbox.Game.Weapons
     {
         protected int m_shotsLeftInBurst = 0;
         protected int m_nextShootTime = 0;
+        public bool raytraceNeedsUpdate = true;
 
         private int m_nextNotificationTime = 0;
         private MyHudNotification m_reloadNotification = null;
@@ -128,8 +129,8 @@ namespace Sandbox.Game.Weapons
         {
             SyncFlag = true;
             var ob = builder as MyObjectBuilder_SmallMissileLauncher;
-           
- 
+
+            GunBase.launcherBlock = this;
             MyStringHash resourceSinkGroup;
             var weaponBlockDefinition = BlockDefinition as MyWeaponBlockDefinition;
             if (weaponBlockDefinition != null && this.GetInventory() == null) 
@@ -304,6 +305,24 @@ namespace Sandbox.Game.Weapons
                 if (MySession.Static.SurvivalMode && this.GetInventory().VolumeFillFactor < 0.5f)
                 {
                     MyGridConveyorSystem.ItemPullRequest(this, this.GetInventory(), OwnerId, m_gunBase.CurrentAmmoMagazineId, 1);
+                }
+            }
+
+            if (raytraceNeedsUpdate)
+            {
+                Vector3I direction = (this.Max - this.Min) / 3;
+                Vector3I pos1 = direction + this.Max;
+                Vector3I pos2 = pos1 + direction * (CubeGrid.Max + CubeGrid.Min).Length();
+                Vector3I resultVector = new Vector3I();
+                Sandbox.Engine.Physics.MyPhysics.HitInfo? hitInfo = MyPhysics.CastRay(CubeGrid.GridIntegerToWorld(pos1 + direction), CubeGrid.GridIntegerToWorld(pos2));
+                if (hitInfo != null)
+                {
+                    Vector3I hitLocationInGrid = CubeGrid.WorldToGridInteger(hitInfo.Value.Position);
+                    Vector3I.Cross(ref pos1, ref hitLocationInGrid, out resultVector);
+                    if (resultVector != Vector3I.Zero)
+                    {
+                        return;
+                    }
                 }
             }
         }

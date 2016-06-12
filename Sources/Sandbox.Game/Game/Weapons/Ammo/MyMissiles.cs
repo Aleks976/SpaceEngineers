@@ -70,17 +70,17 @@ namespace Sandbox.Game.Weapons
             //}
         }
 
-        static MyMissile CreateMissile(MyWeaponPropertiesWrapper weaponProperties)
+        static MyMissile CreateMissile(MyWeaponPropertiesWrapper weaponProperties, MyCubeBlock launcherBlock = null)
         {
-            MyMissile missile = new MyMissile();
+            MyMissile missile = new MyMissile(launcherBlock);
             missile.Init(weaponProperties);
             m_missiles.Add(missile);
             return missile;
         }
 
-        public static MyMissile AddUnsynced(MyWeaponPropertiesWrapper weaponProperties, Vector3D position, Vector3D initialVelocity, Vector3D direction, long ownerId)
+        public static MyMissile AddUnsynced(MyWeaponPropertiesWrapper weaponProperties, Vector3D position, Vector3D initialVelocity, Vector3D direction, long ownerId, MyCubeBlock launcherblock = null)
         {
-            MyMissile newMissile = CreateMissile(weaponProperties);
+            MyMissile newMissile = CreateMissile(weaponProperties,launcherblock);
             if (Sync.IsServer)
             { 
                 //"hack" to prevent self shooting of rocket launchers if there is lag on network
@@ -99,9 +99,9 @@ namespace Sandbox.Game.Weapons
         }
 
         //  Add new missile to the list
-        public static MyMissile Add(MyWeaponPropertiesWrapper weaponProperties, Vector3D position, Vector3D initialVelocity, Vector3D direction, long ownerId)
+        public static MyMissile Add(MyWeaponPropertiesWrapper weaponProperties, Vector3D position, Vector3D initialVelocity, Vector3D direction, long ownerId, MyCubeBlock launcherBlock)
         {
-            MyMissile newMissile = AddUnsynced(weaponProperties, position, initialVelocity, direction, ownerId);
+            MyMissile newMissile = AddUnsynced(weaponProperties, position, initialVelocity, direction, ownerId, launcherBlock);
             // REMOVE-ME: Still commented out as of 70997. Ported to new MP events. Rmoved old sync class MySyncMissiles
             //if (newMissile != null && Sync.IsServer)
             //    MyMultiplayer.RaiseStaticEvent(s => MyMissiles.MissileCreatedSuccess, missileData.Launcher, initialVelocity);
