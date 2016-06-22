@@ -53,6 +53,7 @@ using VRageRender;
 using VRage.Game.Entity;
 using VRage.Game.ModAPI;
 using VRage.Game.ModAPI.Interfaces;
+using Sandbox.Game.ReferenceFrames;
 
 #endregion
 
@@ -359,6 +360,8 @@ namespace Sandbox.Game.World
         const int FRAMES_TO_CONSIDER_READY = 10;
         int m_framesToReady;
         public bool Ready { get; private set; }
+
+        public MyReferenceFrames referenceFrames = new MyReferenceFrames();
 
         /// <summary>
         /// Called after session is created, but before it's loaded.

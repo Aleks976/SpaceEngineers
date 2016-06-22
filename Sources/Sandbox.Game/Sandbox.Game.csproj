@@ -576,6 +576,8 @@
     <Compile Include="Game\GUI\MyHudChangedInventoryItems.cs" />
     <Compile Include="Game\MyDecals.cs" />
     <Compile Include="Game\ParticleEffects\MyCubeBlockEffect.cs" />
+    <Compile Include="Game\ReferenceFrames\MyReferenceFrame.cs" />
+    <Compile Include="Game\ReferenceFrames\MyReferenceFrames.cs" />
     <Compile Include="Game\Replication\MyCharacterNetState.cs" />
     <Compile Include="Game\Replication\MyCharacterPositionVerificationStateGroup.cs" />
     <Compile Include="Game\Replication\MyCraftingComponentReplicable.cs" />

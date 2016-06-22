@@ -646,6 +646,13 @@ namespace Sandbox.Engine.Physics
             world.StepSimulation(VRage.Game.MyEngineConstants.PHYSICS_STEP_SIZE_IN_SECONDS * MyFakes.SIMULATION_SPEED);
             world.StepSimulation(VRage.Game.MyEngineConstants.PHYSICS_STEP_SIZE_IN_SECONDS * MyFakes.SIMULATION_SPEED);
             world.MarkForWrite();
+            /*foreach (MyEntity entity in MyEntities.GetEntities())
+            {
+                if (entity.GetType() == typeof(MyCubeGrid))
+                {
+                    entity.PositionComp.SetPosition(entity.PositionComp.GetPosition() + new Vector3(0, 20, 0));
+                }
+            }*/
         }
 
 
